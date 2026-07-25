@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="진법 변환과 논리 게이트를 스스로 학습하는 브라우저 기반 학습 도구">
+  <title>스스로 학습하는 불대수 진법 변환기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260725-2">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#top">
+      <span class="brand-icon">🧠</span>
+      <span>불 대수·진법 변환기</span>
+    </a>
+    <nav class="nav" aria-label="주요 메뉴">
+      <a class="active" href="#converter"><span class="nav-icon">⇄</span>진법 변환</a>
+      <a href="#gates"><span class="nav-icon">◇</span>논리 게이트</a>
+      <a href="#quiz"><span class="nav-icon">📝</span>문제 풀이</a>
+      <a href="#analytics"><span class="nav-icon">📊</span>학습 분석</a>
+      <a href="#tutor"><span class="nav-icon">🤖</span>AI 튜터</a>
+    </nav>
+    <div class="storage-card">
+      <span class="storage-icon">✓</span>
+      <div><strong>학습 기록 자동 저장</strong><small>현재 브라우저에만 보관</small></div>
+    </div>
+  </aside>
+
+  <main class="main" id="top">
+    <header class="topbar">
+      <div class="page-heading"><h1>스스로 학습하는 <strong>불대수 진법 변환기</strong></h1></div>
+      <div class="avatar">👤</div>
+    </header>
+
+    <section class="banner">
+      <div class="banner-left">
+        <span class="banner-bot">🤖</span>
+        <div><h2>안녕하세요!</h2><p>오늘도 디지털 논리 학습을 시작해볼까요?</p></div>
+      </div>
+      <a class="banner-button" href="#quiz">오늘의 문제 풀기 →</a>
+    </section>
+
+    <div class="grid-2">
+      <section class="workspace card" id="converter">
+        <h2 class="card-title">진법 변환기</h2>
+        <div class="converter-body">
+          <div>
+            <div class="base-tabs" role="tablist" aria-label="입력 형식">
+              <button class="active" data-base="2">2 진수</button>
+              <button data-base="8">8 진수</button>
+              <button data-base="10">10 진수</button>
+              <button data-base="16">16 진수</button>
+              <button data-base="ascii">ASCII</button>
+            </div>
+            <label class="field-label" for="convertInput" id="convertLabel">2 진수 입력</label>
+            <div class="number-input">
+              <input id="convertInput" value="101101" spellcheck="false" autocomplete="off">
+              <button id="clearConvert" aria-label="입력 지우기">×</button>
+            </div>
+            <p class="input-error" id="convertError" role="alert"></p>
+            <div class="field-label">변환 결과</div>
+            <div class="result-grid" id="convertResults"></div>
+          </div>
+          <div class="process-panel">
+            <h3>변환 과정</h3>
+            <div class="conversion-steps" id="conversionSteps"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace card" id="gates">
+        <h2 class="card-title">논리 게이트 시뮬레이터</h2>
+        <div class="gate-sim">
+          <aside class="gate-controls">
+            <label class="field-label light" for="gateSelect">게이트 선택</label>
+            <select id="gateSelect">
+              <option>AND</option><option>OR</option><option>NOT</option>
+              <option>NAND</option><option>NOR</option><option selected>XOR</option><option>XNOR</option>
+            </select>
+            <span class="field-label light">입력 값</span>
+            <label class="signal-row">A <input type="checkbox" id="inputA" checked><span class="toggle"></span></label>
+            <label class="signal-row" id="inputBRow">B <input type="checkbox" id="inputB"><span class="toggle"></span></label>
+            <span class="field-label light">출력</span>
+            <div class="gate-output"><span>Y</span><strong id="gateOutput">1</strong></div>
+          </aside>
+          <div class="gate-stage">
+            <div class="gate-canvas"><svg id="gateSvg" viewBox="0 0 320 180" aria-label="논리 게이트 회로"></svg></div>
+            <div class="truth-wrap"><table id="truthTable"></table></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="workspace card" id="quiz">
+        <div class="quiz-header">
+          <h2 class="card-title">📝 문제 풀이</h2>
+          <select id="quizCategory" aria-label="문제 영역 선택">
+            <option value="">전체 랜덤</option>
+            <option value="진법 변환">진법 변환</option>
+            <option value="논리 게이트">논리 게이트</option>
+            <option value="불 대수">불 대수</option>
+          </select>
+        </div>
+        <div class="quiz-box">
+          <div class="quiz-label"><span id="quizCategoryLabel">진법 변환</span><small id="quizTopicLabel"></small></div>
+          <div class="quiz-question" id="quizQuestion"></div>
+          <div class="quiz-choices" id="quizChoices"></div>
+          <div class="quiz-bottom">
+            <p id="quizFeedback" aria-live="polite"></p>
+            <button id="nextQuiz">다음 문제 →</button>
+          </div>
+        </div>
+      </section>
+      <section class="workspace card" id="analytics">
+        <div class="analytics-header">
+          <h2 class="card-title">학습 분석</h2>
+          <button class="reset-data" id="resetData">기록 초기화</button>
+        </div>
+        <div class="stats-grid">
+          <article><span>전체 정답률</span><strong id="statAccuracy">0<small>%</small></strong></article>
+          <article><span>푼 문제</span><strong id="statTotal">0<small>문제</small></strong></article>
+          <article><span>평균 풀이 시간</span><strong id="statTime">0<small>초</small></strong></article>
+          <article><span>획득한 배지</span><strong id="statBadges">0<small>개</small></strong></article>
+        </div>
+        <div class="analytics-grid">
+          <article class="sub-card"><h3>영역별 정답률</h3><div class="category-bars" id="categoryBars"></div></article>
+          <article class="sub-card"><h3>최근 풀이</h3><div class="recent-list" id="recentList"></div></article>
+        </div>
+        <div class="privacy-notice"><span>✓</span><div><strong>문제 풀이 기록은 현재 브라우저에 자동 저장됩니다.</strong><p>외부 서버로 전송되지 않으며, 브라우저 데이터를 삭제하면 학습 기록도 함께 초기화됩니다.</p></div></div>
+      </section>
+    </div>
+
+    <div class="grid-1">
+      <section class="workspace card" id="tutor">
+        <div class="tutor-header">
+          <div><h2 class="card-title">🤖 AI 튜터</h2><p>진법 변환, 논리 게이트, 불 대수를 질문해보세요.</p></div>
+          <span class="ai-status" id="aiStatus">연결 확인 중</span>
+        </div>
+        <div class="chat-box" id="chatBox" aria-live="polite">
+          <div class="chat-row bot"><span class="chat-avatar">🤖</span><div class="chat-bubble">안녕하세요! 디지털 논리 학습을 도와드릴게요. 궁금한 내용을 질문해보세요.</div></div>
+        </div>
+        <div class="quick-questions">
+          <button data-question="2진수 101101을 10진수로 바꾸는 과정을 설명해줘">진법 변환 과정</button>
+          <button data-question="XOR 게이트와 OR 게이트의 차이를 설명해줘">XOR와 OR 차이</button>
+          <button data-question="드모르간 법칙을 쉬운 예제로 설명해줘">드모르간 법칙</button>
+        </div>
+        <form class="chat-input" id="chatForm">
+          <input id="chatInput" maxlength="1000" autocomplete="off" placeholder="질문을 입력하세요..." aria-label="AI 튜터 질문">
+          <button id="chatSend" type="submit">보내기</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="./config.js?v=20260725-5"></script>
+<script src="./app.js?v=20260725-5"></script>
+</body>
+</html>
