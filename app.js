@@ -318,12 +318,91 @@ if (aiApiUrl) {
   aiStatus.classList.add('setup');
 }
 
-function addChatMessage(text, sender) {
+function escapeMarkdownHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderMarkdown(markdown) {
+  const codeBlocks = [];
+  const inlineCodes = [];
+  let source = String(markdown).replace(/(```|''')(\w*)[^\S\r\n]*\r?\n?([\s\S]*?)\1/g, (_, fence, language, code) => {
+    const index = codeBlocks.length;
+    codeBlocks.push(`<pre class="md-pre"><code>${escapeMarkdownHtml(code.replace(/\r?\n$/, ''))}</code></pre>`);
+    return `\u0000CODE${index}\u0000`;
+  });
+
+  source = source.replace(/`([^`\n]+)`/g, (_, code) => {
+    const index = inlineCodes.length;
+    inlineCodes.push(`<code class="md-code">${escapeMarkdownHtml(code)}</code>`);
+    return `\u0000INLINE${index}\u0000`;
+  });
+  source = escapeMarkdownHtml(source);
+
+  const output = [];
+  let listType = null;
+  const closeList = () => {
+    if (!listType) return;
+    output.push(`</${listType}>`);
+    listType = null;
+  };
+  const inline = (text) => text
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+    .replace(/(^|[^_])_([^_\n]+)_/g, '$1<em>$2</em>');
+
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.replace(/\s+$/, '');
+    const heading = line.match(/^(#{1,6})\s+(.*)$/);
+    const ordered = line.match(/^\s*\d+\.\s+(.*)$/);
+    const unordered = line.match(/^\s*[-*+]\s+(.*)$/);
+
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
+      closeList();
+      output.push('<hr class="md-hr">');
+    } else if (heading) {
+      closeList();
+      output.push(`<div class="md-heading md-heading-${heading[1].length}">${inline(heading[2])}</div>`);
+    } else if (ordered) {
+      if (listType !== 'ol') { closeList(); output.push('<ol class="md-list">'); listType = 'ol'; }
+      output.push(`<li>${inline(ordered[1])}</li>`);
+    } else if (unordered) {
+      if (listType !== 'ul') { closeList(); output.push('<ul class="md-list">'); listType = 'ul'; }
+      output.push(`<li>${inline(unordered[1])}</li>`);
+    } else if (/^\u0000CODE\d+\u0000$/.test(line.trim())) {
+      closeList();
+      output.push(line.trim());
+    } else if (!line.trim()) {
+      closeList();
+    } else {
+      closeList();
+      output.push(`<p class="md-paragraph">${inline(line)}</p>`);
+    }
+  }
+  closeList();
+
+  return output.join('')
+    .replace(/\u0000INLINE(\d+)\u0000/g, (_, index) => inlineCodes[index])
+    .replace(/\u0000CODE(\d+)\u0000/g, (_, index) => codeBlocks[index]);
+}
+
+function addChatMessage(text, sender, markdown = false) {
   const row = document.createElement('div');
   row.className = `chat-row ${sender}`;
   const bubble = document.createElement('div');
   bubble.className = 'chat-bubble';
-  bubble.textContent = text;
+  if (markdown && sender === 'bot') {
+    bubble.classList.add('markdown');
+    bubble.innerHTML = renderMarkdown(text);
+  } else {
+    bubble.textContent = text;
+  }
   if (sender === 'bot') {
     const avatar = document.createElement('span');
     avatar.className = 'chat-avatar';
@@ -367,7 +446,7 @@ async function sendChat(message) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'AI 응답을 불러오지 못했습니다.');
     typing.remove();
-    addChatMessage(data.reply, 'bot');
+    addChatMessage(data.reply, 'bot', true);
     chatHistory.push({ role: 'assistant', content: data.reply });
     aiStatus.textContent = 'AI 연결됨';
     aiStatus.className = 'ai-status connected';
