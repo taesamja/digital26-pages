@@ -393,14 +393,56 @@ $$('.quick-questions button').forEach((button) => button.addEventListener('click
 
 /* Navigation */
 const navLinks = $$('.nav a');
+const navigationSections = navLinks
+  .map((link) => document.querySelector(link.getAttribute('href')))
+  .filter(Boolean);
+let preferredSection = 'converter';
+let navigationFrame;
+
+function activateNavigation(sectionId) {
+  navLinks.forEach((link) => {
+    link.classList.toggle('active', link.getAttribute('href') === `#${sectionId}`);
+  });
+}
+
+function syncNavigationToScroll() {
+  navigationFrame = null;
+  const focusY = window.innerHeight * 0.35;
+  const candidates = navigationSections
+    .map((section, index) => {
+      const rect = section.getBoundingClientRect();
+      const visible = rect.bottom > 70 && rect.top < window.innerHeight;
+      const distance = rect.top <= focusY && rect.bottom >= focusY
+        ? 0
+        : Math.min(Math.abs(rect.top - focusY), Math.abs(rect.bottom - focusY));
+      return { section, index, visible, distance };
+    })
+    .filter((item) => item.visible)
+    .sort((a, b) => a.distance - b.distance || a.index - b.index);
+
+  if (!candidates.length) return;
+  const bestDistance = candidates[0].distance;
+  const tied = candidates.filter((item) => Math.abs(item.distance - bestDistance) < 2);
+  const selected = tied.find((item) => item.section.id === preferredSection) || tied[0];
+  preferredSection = selected.section.id;
+  activateNavigation(preferredSection);
+}
+
 navLinks.forEach((link) => link.addEventListener('click', () => {
-  navLinks.forEach((item) => item.classList.remove('active'));
-  link.classList.add('active');
+  preferredSection = link.getAttribute('href').slice(1);
+  activateNavigation(preferredSection);
 }));
 
 $('.banner-button').addEventListener('click', () => {
-  navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#quiz'));
+  preferredSection = 'quiz';
+  activateNavigation(preferredSection);
 });
+
+window.addEventListener('scroll', () => {
+  if (!navigationFrame) navigationFrame = requestAnimationFrame(syncNavigationToScroll);
+}, { passive: true });
+window.addEventListener('resize', syncNavigationToScroll);
+syncNavigationToScroll();
 
 renderConversion();
 updateGate();
